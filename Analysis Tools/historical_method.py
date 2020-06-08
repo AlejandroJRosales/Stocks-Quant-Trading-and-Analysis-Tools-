@@ -1,3 +1,7 @@
+"""
+Check out this website to learn about how to interpret this graph: https://www.investopedia.com/articles/basics/09/simplified-measuring-interpreting-volatility.asp
+"""
+
 import yfinance as yf
 import matplotlib.pyplot as plt
 
