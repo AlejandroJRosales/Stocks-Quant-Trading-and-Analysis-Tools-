@@ -10,21 +10,10 @@ APCA_API_BASE_URL = "https://paper-api.alpaca.markets"
 
 
 class LongShort:
-    def __init__(self, stockUniverse, last_decisions):
+    def __init__(self, stock_universe, last_decisions):
         self.alpaca = tradeapi.REST(API_KEY, SECRET_KEY, APCA_API_BASE_URL, 'v2')
-        self.stockUniverse = stockUniverse
-
-        self.long = []
-        self.short = []
+        self.stock_universe = stock_universe
         self.last_decisions = last_decisions
-        self.qShort = None
-        self.qLong = None
-        self.adjustedQLong = None
-        self.adjustedQShort = None
-        self.blacklist = set()
-        self.longAmount = 0
-        self.shortAmount = 0
-        self.timeToClose = None
 
     def run(self):
         # First, cancel any existing orders so they don't impact our buying power.
@@ -37,7 +26,7 @@ class LongShort:
                 if self.alpaca.get_clock().is_open:
                     self.rebalance()
                 else:
-                    self.awaitMarketOpen()
+                    self.await_market_open()
 
                 # Wait for 1 hour to look at markets again
                 time.sleep(60 * 60)
@@ -47,19 +36,19 @@ class LongShort:
             print()
 
     # Wait for market to open.
-    def awaitMarketOpen(self):
+    def await_market_open(self):
         clock = self.alpaca.get_clock()
-        openingTime = clock.next_open.replace(tzinfo=datetime.timezone.utc).timestamp()
-        currTime = clock.timestamp.replace(tzinfo=datetime.timezone.utc).timestamp()
-        timeToOpen = int((openingTime - currTime) / 60)
-        print(str(timeToOpen) + " minutes til market open.")
-        time.sleep(timeToOpen)
+        opening_time = clock.next_open.replace(tzinfo=datetime.timezone.utc).timestamp()
+        curr_time = clock.timestamp.replace(tzinfo=datetime.timezone.utc).timestamp()
+        time_to_open = int((opening_time - curr_time) / 60)
+        print(str(time_to_open) + " minutes til market open.")
+        time.sleep(time_to_open)
 
     def rebalance(self):
         algo = TradingAlgorithms()
 
-        for stock in self.stockUniverse:
-            current_decision = algo.introAlgo(stock)
+        for stock in self.stock_universe:
+            current_decision = algo.intro_algo(stock)
 
             if self.last_decisions[stock] != current_decision and current_decision == "Buy":
                 self.buy(stock)
@@ -71,7 +60,7 @@ class LongShort:
     def buy(self, stock):
         # Get how much buying power we have
         portfolio_cash = float(self.alpaca.get_account().cash)
-        buying_power_per_stock = portfolio_cash // len(self.stockUniverse)
+        buying_power_per_stock = portfolio_cash // len(self.stock_universe)
 
         # get how many stock we can buy
         ticker_price = yf.Ticker(stock).info['ask']
@@ -116,7 +105,7 @@ class TradingAlgorithms:
 
         return macd
 
-    def introAlgo(self, stock):
+    def intro_algo(self, stock):
         macd = self.macdIndicator(self.get_high_low_close(stock))
         if macd < 0:
             return "Sell"
@@ -127,14 +116,14 @@ class TradingAlgorithms:
 
 def initialize():
     # The stocks to be monitored
-    stockUniverse = ['APPN', 'GMED']
+    stock_universe = ['APPN', 'GMED']
 
     # Initialize the stock starting point
     algo = TradingAlgorithms()
-    last_decisions = {stock: algo.introAlgo(stock) for stock in stockUniverse}
+    last_decisions = {stock: algo.intro_algo(stock) for stock in stock_universe}
 
     # Run the LongShort class
-    ls = LongShort(stockUniverse=stockUniverse, last_decisions=last_decisions)
+    ls = LongShort(stock_universe=stock_universe, last_decisions=last_decisions)
     ls.run()
 
 
